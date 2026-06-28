@@ -1,18 +1,40 @@
+
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import './App.css'
 
-function App() {
+function App({ setAuth }) {
   const [dramas, setDramas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const navigate = useNavigate()
+
+  const handleLogout = () => {
+    localStorage.removeItem('access')
+    localStorage.removeItem('refresh')
+    setAuth(false)
+    navigate('/login')
+  }
 
   useEffect(() => {
     const fetchDramas = async () => {
+      const access = localStorage.getItem('access')
+      
       try {
-        const response = await fetch('/api/dramas/')
+        const response = await fetch('/api/dramas/', {
+          headers: {
+            'Authorization': `Bearer ${access}`
+          }
+        })
+        
         if (!response.ok) {
+          if (response.status === 401) {
+            handleLogout()
+            return
+          }
           throw new Error(`HTTP error! status: ${response.status}`)
         }
+        
         const data = await response.json()
         setDramas(data)
       } catch (err) {
@@ -35,8 +57,9 @@ function App() {
 
   return (
     <div className="container">
-      <header>
+      <header className="header">
         <h1>K-Drama World</h1>
+        <button onClick={handleLogout} className="btn btn-secondary">Logout</button>
       </header>
       <main>
         <h2>All K-Dramas</h2>
